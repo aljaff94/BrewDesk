@@ -1,8 +1,8 @@
 cask "brewdesk" do
-  version :latest
+  version "1.0.0"
   sha256 :no_check
 
-  url "https://github.com/aljaff94/BrewDesk/releases/latest/download/BrewDesk.zip"
+  url "https://github.com/aljaff94/BrewDesk/releases/download/v#{version}/BrewDesk.zip"
   name "BrewDesk"
   desc "Native macOS GUI for Homebrew package manager"
   homepage "https://github.com/aljaff94/BrewDesk"
