@@ -31,18 +31,35 @@ final class PackageListViewModel {
     }
 
     let client: any BrewClient
+    let cache: BrewCache
     private var searchTask: Task<Void, Never>?
 
-    init(client: any BrewClient) {
+    init(client: any BrewClient, cache: BrewCache) {
         self.client = client
+        self.cache = cache
     }
 
-    func load() async {
-        isLoading = true
+    func load(forceRefresh: Bool = false) async {
+        // If cache has data, show instantly
+        let hasCachedData = cache.installedPackages != nil
+        if !hasCachedData {
+            isLoading = true
+        }
         error = nil
 
+        // Show cached data immediately
+        if let cached = cache.installedPackages, !forceRefresh {
+            var all: [Package] = []
+            all.append(contentsOf: cached.formulae.map { .formula($0) })
+            all.append(contentsOf: cached.casks.map { .cask($0) })
+            packages = all
+            applyFilters()
+            isLoading = false
+            return
+        }
+
         do {
-            let info = try await client.installedPackages()
+            let info = try await cache.getInstalledPackages(forceRefresh: forceRefresh)
             var all: [Package] = []
             all.append(contentsOf: info.formulae.map { .formula($0) })
             all.append(contentsOf: info.casks.map { .cask($0) })

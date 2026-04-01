@@ -125,6 +125,10 @@ final class MockBrewClient: BrewClient, @unchecked Sendable {
     func pin(_ name: String) async throws {}
     func unpin(_ name: String) async throws {}
 
+    func installedTapNames() async throws -> [String] {
+        ["homebrew/core", "homebrew/cask"]
+    }
+
     func installedTaps() async throws -> [Tap] {
         [Tap(
             name: "homebrew/core", user: "homebrew", repo: "core",

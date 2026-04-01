@@ -1,5 +1,18 @@
 import Foundation
 
+// Async extension for reading file handles
+private extension FileHandle {
+    func readToEndAsync() async -> Data {
+        await withCheckedContinuation { continuation in
+            self.readabilityHandler = { handle in
+                self.readabilityHandler = nil
+                let data = handle.readDataToEndOfFile()
+                continuation.resume(returning: data)
+            }
+        }
+    }
+}
+
 struct ProcessResult: Sendable {
     let stdout: String
     let stderr: String
@@ -60,7 +73,7 @@ actor BrewProcess {
         self.brewPath = path
     }
 
-    func run(_ arguments: [String], noAutoUpdate: Bool = true) async throws -> ProcessResult {
+    func run(_ arguments: [String], noAutoUpdate: Bool = true, timeout: TimeInterval = 30) async throws -> ProcessResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: brewPath)
         process.arguments = arguments
@@ -78,9 +91,21 @@ actor BrewProcess {
 
         try process.run()
 
-        // Read output asynchronously
-        let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+        // Read output asynchronously to avoid blocking
+        let stdoutTask = Task { await stdoutPipe.fileHandleForReading.readToEndAsync() }
+        let stderrTask = Task { await stderrPipe.fileHandleForReading.readToEndAsync() }
+
+        // Timeout protection
+        let timeoutTask = Task {
+            try? await Task.sleep(for: .seconds(timeout))
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+
+        let stdoutData = await stdoutTask.value
+        let stderrData = await stderrTask.value
+        timeoutTask.cancel()
 
         process.waitUntilExit()
 

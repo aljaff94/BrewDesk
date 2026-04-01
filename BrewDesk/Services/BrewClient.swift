@@ -19,6 +19,7 @@ protocol BrewClient: Sendable {
     func unpin(_ name: String) async throws
 
     // Taps
+    func installedTapNames() async throws -> [String]
     func installedTaps() async throws -> [Tap]
     func addTap(_ name: String) -> AsyncThrowingStream<String, Error>
     func removeTap(_ name: String) async throws

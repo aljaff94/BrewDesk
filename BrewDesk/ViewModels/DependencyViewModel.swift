@@ -18,16 +18,21 @@ final class DependencyViewModel {
     var error: BrewError?
 
     private let client: any BrewClient
+    private let cache: BrewCache
 
-    init(client: any BrewClient) {
+    init(client: any BrewClient, cache: BrewCache) {
         self.client = client
+        self.cache = cache
     }
 
-    func load() async {
-        isLoading = true
+    func load(forceRefresh: Bool = false) async {
+        let hasCachedData = cache.installedPackages != nil
+        if !hasCachedData {
+            isLoading = true
+        }
         error = nil
         do {
-            let info = try await client.installedPackages()
+            let info = try await cache.getInstalledPackages(forceRefresh: forceRefresh)
             formulae = info.formulae
         } catch let e as BrewError {
             error = e

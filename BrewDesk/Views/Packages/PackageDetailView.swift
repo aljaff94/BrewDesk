@@ -149,12 +149,15 @@ struct PackageDetailView: View {
             if vm.package.isInstalled {
                 if vm.package.isOutdated {
                     Button("Upgrade") {
+                        let stream = vm.upgradeStream()
+                        let name = vm.package.name
+                        dismiss()
                         Task {
+                            appState.cache.invalidatePackages()
                             await appState.runOperation(
-                                title: "Upgrading \(vm.package.name)",
-                                stream: vm.upgradeStream()
+                                title: "Upgrading \(name)",
+                                stream: stream
                             )
-                            await vm.refresh()
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -168,12 +171,15 @@ struct PackageDetailView: View {
                 }
 
                 Button("Uninstall", role: .destructive) {
+                    let stream = vm.uninstallStream()
+                    let name = vm.package.name
+                    dismiss()
                     Task {
+                        appState.cache.invalidatePackages()
                         await appState.runOperation(
-                            title: "Uninstalling \(vm.package.name)",
-                            stream: vm.uninstallStream()
+                            title: "Uninstalling \(name)",
+                            stream: stream
                         )
-                        await vm.refresh()
                     }
                 }
                 .buttonStyle(.bordered)
@@ -189,14 +195,15 @@ struct PackageDetailView: View {
                 }
 
                 Button("Install") {
+                    let installName = selectedVersion.isEmpty ? vm.package.name : selectedVersion
+                    let isCask = vm.package.packageType == .cask
+                    dismiss()
                     Task {
-                        let installName = selectedVersion.isEmpty ? vm.package.name : selectedVersion
-                        let isCask = vm.package.packageType == .cask
+                        appState.cache.invalidatePackages()
                         await appState.runOperation(
                             title: "Installing \(installName)",
                             stream: appState.brewClient.install(installName, isCask: isCask)
                         )
-                        await vm.refresh()
                     }
                 }
                 .buttonStyle(.borderedProminent)

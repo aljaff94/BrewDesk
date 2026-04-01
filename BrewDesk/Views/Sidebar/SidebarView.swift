@@ -23,6 +23,7 @@ struct SidebarView: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
+                            appState.globalSearchText = ""
                             appState.selectedSidebar = item
                         }
                         .listRowBackground(

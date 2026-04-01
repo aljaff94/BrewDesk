@@ -8,8 +8,11 @@ struct ContentView: View {
             SidebarView()
                 .frame(minWidth: 200)
         } detail: {
-            detailView
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if !appState.globalSearchText.isEmpty {
+                UnifiedSearchView()
+            } else {
+                detailView
+            }
         }
         .searchable(
             text: Binding(
@@ -19,16 +22,6 @@ struct ContentView: View {
             placement: .toolbar,
             prompt: "Search packages..."
         )
-        .onChange(of: appState.globalSearchText) { _, newValue in
-            if !newValue.isEmpty {
-                switch appState.selectedSidebar {
-                case .formulae, .casks, .outdated:
-                    break
-                default:
-                    appState.selectedSidebar = .formulae
-                }
-            }
-        }
         .sheet(isPresented: Binding(
             get: { appState.showOperationSheet },
             set: { appState.showOperationSheet = $0 }

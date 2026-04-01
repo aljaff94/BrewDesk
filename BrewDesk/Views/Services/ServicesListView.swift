@@ -62,7 +62,7 @@ struct ServicesListView: View {
             }
         }
         .task {
-            let vm = ServicesViewModel(client: appState.brewClient)
+            let vm = ServicesViewModel(client: appState.brewClient, cache: appState.cache)
             viewModel = vm
             await vm.load()
         }

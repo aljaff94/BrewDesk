@@ -76,7 +76,14 @@ struct BrewDeskApp: App {
             appState.showOperationSheet = false
         }
 
-        await appState.refreshOutdatedCount()
+        // Preload cache for instant tab switching
+        async let preloadInstalled: () = { let _ = try? await appState.cache.getInstalledPackages() }()
+        async let preloadOutdated: () = { await appState.refreshOutdatedCount() }()
+        async let preloadVersion: () = { let _ = try? await appState.cache.getBrewVersion() }()
+        async let preloadDisk: () = { let _ = await appState.cache.getDiskUsage() }()
+        async let preloadCache: () = { let _ = await appState.cache.getCacheSize() }()
+        async let preloadTapNames: () = { let _ = try? await appState.cache.getTapNames() }()
+        _ = await (preloadInstalled, preloadOutdated, preloadVersion, preloadDisk, preloadCache, preloadTapNames)
     }
 
     private func startPeriodicUpdateCheck() async {

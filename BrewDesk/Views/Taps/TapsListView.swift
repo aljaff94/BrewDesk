@@ -24,15 +24,21 @@ struct TapsListView: View {
                                             .font(.caption)
                                     }
                                 }
-                                HStack(spacing: 12) {
-                                    Label("\(tap.formulaCount) formulae", systemImage: "terminal")
-                                    Label("\(tap.caskCount) casks", systemImage: "macwindow")
-                                    if let lastCommit = tap.lastCommit {
-                                        Text("Updated \(lastCommit)")
+                                if !tap.isLightweight {
+                                    HStack(spacing: 12) {
+                                        Label("\(tap.formulaCount) formulae", systemImage: "terminal")
+                                        Label("\(tap.caskCount) casks", systemImage: "macwindow")
+                                        if let lastCommit = tap.lastCommit {
+                                            Text("Updated \(lastCommit)")
+                                        }
                                     }
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                } else {
+                                    Text(tap.user.isEmpty ? "" : "by \(tap.user)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                             }
                             Spacer()
                             if !tap.official {
@@ -62,7 +68,7 @@ struct TapsListView: View {
             }
             ToolbarItem {
                 Button {
-                    Task { await viewModel?.load() }
+                    Task { await viewModel?.load(forceRefresh: true) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -76,7 +82,7 @@ struct TapsListView: View {
                 .environment(appState)
         }
         .task {
-            let vm = TapsViewModel(client: appState.brewClient)
+            let vm = TapsViewModel(client: appState.brewClient, cache: appState.cache)
             viewModel = vm
             await vm.load()
         }

@@ -110,7 +110,7 @@ struct DependencyTreeView: View {
         }
         .navigationTitle("Dependencies")
         .task {
-            let vm = DependencyViewModel(client: appState.brewClient)
+            let vm = DependencyViewModel(client: appState.brewClient, cache: appState.cache)
             viewModel = vm
             await vm.load()
         }

@@ -52,7 +52,8 @@ struct PackageListView: View {
                                     title: "Installing \(installName)",
                                     stream: appState.brewClient.install(installName, isCask: pkg.packageType == .cask)
                                 )
-                                await vm.load()
+                                appState.cache.invalidatePackages()
+                                await vm.load(forceRefresh: true)
                             }
                         } onUpgrade: {
                             Task {
@@ -60,7 +61,8 @@ struct PackageListView: View {
                                     title: "Upgrading \(pkg.name)",
                                     stream: appState.brewClient.upgrade(pkg.name)
                                 )
-                                await vm.load()
+                                appState.cache.invalidatePackages()
+                                await vm.load(forceRefresh: true)
                                 await appState.refreshOutdatedCount()
                             }
                         } onToggleSelect: {
@@ -97,20 +99,11 @@ struct PackageListView: View {
             }
         }
         .task {
-            let vm = PackageListViewModel(client: appState.brewClient)
+            let vm = PackageListViewModel(client: appState.brewClient, cache: appState.cache)
             vm.selectedType = typeFilter
             vm.selectedFilter = defaultFilter
-            vm.searchText = appState.globalSearchText
             viewModel = vm
             await vm.load()
-            if !appState.globalSearchText.isEmpty {
-                vm.triggerOnlineSearch()
-            }
-        }
-        .onChange(of: appState.globalSearchText) { _, newValue in
-            guard let vm = viewModel else { return }
-            vm.searchText = newValue
-            vm.triggerOnlineSearch()
         }
         .onKeyPress(.delete) {
             guard let vm = viewModel, vm.hasSelection else { return .ignored }
@@ -174,7 +167,8 @@ struct PackageListView: View {
             }
         }
         vm.clearSelection()
-        await vm.load()
+        appState.cache.invalidatePackages()
+        await vm.load(forceRefresh: true)
     }
 
     private func upgradeAll() async {
@@ -182,7 +176,8 @@ struct PackageListView: View {
             title: "Upgrading All Packages",
             stream: appState.brewClient.upgrade(nil)
         )
-        await viewModel?.load()
+        appState.cache.invalidatePackages()
+        await viewModel?.load(forceRefresh: true)
         await appState.refreshOutdatedCount()
     }
 
@@ -196,7 +191,8 @@ struct PackageListView: View {
                             title: "Upgrading \(pkg.name)",
                             stream: appState.brewClient.upgrade(pkg.name)
                         )
-                        await viewModel?.load()
+                        appState.cache.invalidatePackages()
+                        await viewModel?.load(forceRefresh: true)
                     }
                 }
             }
@@ -213,7 +209,8 @@ struct PackageListView: View {
                         title: "Uninstalling \(pkg.name)",
                         stream: appState.brewClient.uninstall(pkg.name, isCask: pkg.packageType == .cask)
                     )
-                    await viewModel?.load()
+                    appState.cache.invalidatePackages()
+                    await viewModel?.load(forceRefresh: true)
                 }
             }
         } else {
@@ -223,7 +220,8 @@ struct PackageListView: View {
                         title: "Installing \(pkg.name)",
                         stream: appState.brewClient.install(pkg.name, isCask: pkg.packageType == .cask)
                     )
-                    await viewModel?.load()
+                    appState.cache.invalidatePackages()
+                    await viewModel?.load(forceRefresh: true)
                 }
             }
         }

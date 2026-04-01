@@ -33,4 +33,23 @@ struct Tap: Codable, Identifiable, Sendable {
     var formulaCount: Int { formulaNames.count }
     var caskCount: Int { caskTokens.count }
     var totalPackages: Int { formulaCount + caskCount }
+
+    /// Create a lightweight tap from just a name (from `brew tap`)
+    static func fromName(_ name: String) -> Tap {
+        let parts = name.split(separator: "/")
+        let user = parts.count >= 1 ? String(parts[0]) : ""
+        let repo = parts.count >= 2 ? String(parts[1]) : ""
+        let isOfficial = user == "homebrew"
+        return Tap(
+            name: name, user: user, repo: repo,
+            path: "", installed: true, official: isOfficial,
+            formulaNames: [], caskTokens: [],
+            formulaFiles: nil, caskFiles: nil, commandFiles: nil,
+            remote: nil, customRemote: nil, isPrivate: nil,
+            head: nil, lastCommit: nil, branch: nil
+        )
+    }
+
+    /// Whether this is a lightweight tap (from `brew tap` only, no details yet)
+    var isLightweight: Bool { path.isEmpty }
 }

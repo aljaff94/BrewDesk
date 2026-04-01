@@ -9,12 +9,49 @@ final class LiveBrewClient: BrewClient, @unchecked Sendable {
         return d
     }()
 
+    // Cached paths to avoid repeated brew calls
+    nonisolated(unsafe) private static var cachedCellar: String?
+    nonisolated(unsafe) private static var cachedCaskroom: String?
+    nonisolated(unsafe) private static let pathCacheLock = NSLock()
+
     init() throws {
         self.process = try BrewProcess()
     }
 
     init(brewPath: String) {
         self.process = BrewProcess(path: brewPath)
+    }
+
+    // MARK: - Private
+
+    private func getCellarPath() async throws -> String {
+        if let cached = Self.pathCacheLock.withLock({ Self.cachedCellar }) {
+            return cached
+        }
+
+        let result = try await process.run(["--cellar"])
+        let path = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        Self.pathCacheLock.withLock {
+            Self.cachedCellar = path
+        }
+
+        return path
+    }
+
+    private func getCaskroomPath() async throws -> String {
+        if let cached = Self.pathCacheLock.withLock({ Self.cachedCaskroom }) {
+            return cached
+        }
+
+        let result = try await process.run(["--caskroom"])
+        let path = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        Self.pathCacheLock.withLock {
+            Self.cachedCaskroom = path
+        }
+
+        return path
     }
 
     // MARK: - Package Info
@@ -119,6 +156,17 @@ final class LiveBrewClient: BrewClient, @unchecked Sendable {
 
     // MARK: - Taps
 
+    func installedTapNames() async throws -> [String] {
+        let result = try await process.run(["tap"])
+        guard result.exitCode == 0 else {
+            throw BrewError.commandFailed(command: "tap", exitCode: result.exitCode, stderr: result.stderr)
+        }
+        return result.stdout
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     func installedTaps() async throws -> [Tap] {
         let result = try await process.run(["tap-info", "--json", "--installed"])
         guard result.exitCode == 0 else {
@@ -211,14 +259,7 @@ final class LiveBrewClient: BrewClient, @unchecked Sendable {
     // MARK: - Disk Usage
 
     func packageDiskUsage(_ name: String, isCask: Bool) async throws -> String {
-        let basePath: String
-        if isCask {
-            let result = try await process.run(["--caskroom"])
-            basePath = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        } else {
-            let result = try await process.run(["--cellar"])
-            basePath = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
+        let basePath = isCask ? try await getCaskroomPath() : try await getCellarPath()
         let path = "\(basePath)/\(name)"
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/du")

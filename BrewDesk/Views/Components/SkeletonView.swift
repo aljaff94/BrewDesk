@@ -48,92 +48,202 @@ struct SkeletonBlock: View {
 }
 
 // MARK: - Dashboard Skeleton
-// Matches DashboardView exactly: StatCards, Quick Actions GroupBox, Info GroupBox
+// Matches DashboardView exactly: Health Banner, 4 Stat Cards, Composition Bar, Two-Column Cards
 
 struct DashboardSkeleton: View {
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                // Stats — same grid as real dashboard
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 16) {
-                    skeletonStatCard(title: "Formulae", icon: "terminal", color: .blue)
-                    skeletonStatCard(title: "Casks", icon: "macwindow", color: .purple)
-                    skeletonStatCard(title: "Outdated", icon: "arrow.triangle.2.circlepath", color: .orange)
-                    skeletonStatCard(title: "Disk Usage", icon: "internaldrive", color: .gray)
-                }
+            VStack(spacing: 0) {
+                // Health Banner
+                skeletonHealthBanner
+                    .padding(.horizontal, 28)
+                    .padding(.top, 24)
+                    .padding(.bottom, 20)
 
-                // Quick Actions — real GroupBox label, shimmer button content
-                GroupBox("Quick Actions") {
-                    HStack(spacing: 12) {
-                        skeletonActionButton("Update Homebrew", icon: "arrow.clockwise", color: .blue)
-                        skeletonActionButton("Upgrade All", icon: "arrow.up.circle", color: .green)
-                        skeletonActionButton("Cleanup", icon: "trash", color: .orange)
-                        skeletonActionButton("Run Doctor", icon: "stethoscope", color: .red)
-                        Spacer()
+                // Stat Cards
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 4), spacing: 14) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        skeletonStatCard
                     }
-                    .padding(.vertical, 8)
                 }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 20)
 
-                // Info — real labels, shimmer values
-                GroupBox("Info") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        skeletonInfoRow("Homebrew Version", valueWidth: 180)
-                        skeletonInfoRow("Cache Size", valueWidth: 60)
-                        skeletonInfoRow("Total Installed", valueWidth: 90)
+                // Composition Bar
+                skeletonCompositionBar
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 20)
+
+                // Two-Column Layout
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(spacing: 14) {
+                        skeletonListCard(header: "Quick Actions", rows: 4, hasSubtitle: true)
+                        skeletonListCard(header: "Outdated", rows: 5, hasSubtitle: false, hasBadge: true)
                     }
-                    .padding(.vertical, 4)
+                    .frame(minWidth: 0, maxWidth: .infinity)
+
+                    VStack(spacing: 14) {
+                        skeletonListCard(header: "Recently Installed", rows: 5, hasSubtitle: false)
+                        skeletonListCard(header: "Activity", rows: 3, hasSubtitle: false)
+                        skeletonListCard(header: "System", rows: 3, hasSubtitle: false)
+                    }
+                    .frame(minWidth: 0, maxWidth: .infinity)
                 }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 28)
             }
-            .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func skeletonStatCard(title: String, icon: String, color: Color) -> some View {
+    // Health Banner Skeleton
+    private var skeletonHealthBanner: some View {
+        HStack(spacing: 20) {
+            // Health Ring placeholder
+            Circle()
+                .stroke(Color.primary.opacity(0.06), lineWidth: 6)
+                .frame(width: 52, height: 52)
+                .overlay(
+                    SkeletonBlock(width: 16, height: 16)
+                        .clipShape(Circle())
+                )
+                .shimmer()
+
+            VStack(alignment: .leading, spacing: 6) {
+                SkeletonBlock(width: 120, height: 14)
+                SkeletonBlock(width: 180, height: 10)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 6) {
+                SkeletonBlock(width: 50, height: 26)
+                SkeletonBlock(width: 100, height: 10)
+            }
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+        }
+    }
+
+    // Stat Card Skeleton
+    private var skeletonStatCard: some View {
+        HStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(.quaternary)
+                .frame(width: 3)
+                .padding(.vertical, 10)
+                .shimmer()
+
+            VStack(alignment: .leading, spacing: 6) {
+                SkeletonBlock(width: 12, height: 12)
+                SkeletonBlock(width: 45, height: 18)
+                SkeletonBlock(width: 60, height: 8)
+            }
+            .padding(.leading, 10)
+            .padding(.vertical, 10)
+
+            Spacer(minLength: 4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.03), radius: 4, y: 1)
+        }
+    }
+
+    // Composition Bar Skeleton
+    private var skeletonCompositionBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
+                SkeletonBlock(width: 140, height: 10)
                 Spacer()
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Circle().fill(.quaternary).frame(width: 6, height: 6)
+                        SkeletonBlock(width: 40, height: 8)
+                    }
+                    HStack(spacing: 4) {
+                        Circle().fill(.quaternary).frame(width: 6, height: 6)
+                        SkeletonBlock(width: 30, height: 8)
+                    }
+                }
             }
-            SkeletonBlock(width: 55, height: 28)
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+
+            RoundedRectangle(cornerRadius: 4)
+                .fill(.quaternary)
+                .frame(height: 8)
+                .shimmer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .padding(14)
+        .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.03), radius: 4, y: 1)
+        }
     }
 
-    private func skeletonActionButton(_ title: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.title2)
-            Text(title)
-                .font(.caption)
-        }
-        .frame(width: 100, height: 60)
-        .foregroundStyle(color.opacity(0.3))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(color.opacity(0.2), lineWidth: 1)
-        )
-        .shimmer()
-    }
+    // List Card Skeleton
+    private func skeletonListCard(header: String, rows: Int, hasSubtitle: Bool, hasBadge: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                HStack(spacing: 4) {
+                    SkeletonBlock(width: 10, height: 10)
+                    SkeletonBlock(width: CGFloat(header.count * 7), height: 10)
+                }
+                Spacer()
+                if hasBadge {
+                    SkeletonBlock(width: 22, height: 16)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
 
-    private func skeletonInfoRow(_ label: String, valueWidth: CGFloat) -> some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Spacer()
-            SkeletonBlock(width: valueWidth, height: 14)
+            VStack(spacing: 0) {
+                ForEach(0..<rows, id: \.self) { i in
+                    HStack(spacing: 8) {
+                        if hasSubtitle {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(.quaternary)
+                                .frame(width: 28, height: 28)
+                                .shimmer()
+                        } else {
+                            SkeletonBlock(width: 10, height: 10)
+                                .frame(width: 16)
+                        }
+
+                        VStack(alignment: .leading, spacing: hasSubtitle ? 3 : 0) {
+                            SkeletonBlock(width: CGFloat.random(in: 70...130), height: 12)
+                            if hasSubtitle {
+                                SkeletonBlock(width: CGFloat.random(in: 100...170), height: 9)
+                            }
+                        }
+                        Spacer()
+                        SkeletonBlock(width: CGFloat.random(in: 35...60), height: 10)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, hasSubtitle ? 6 : 4)
+
+                    if i < rows - 1 {
+                        Rectangle()
+                            .fill(.primary.opacity(0.04))
+                            .frame(height: 0.5)
+                            .padding(.leading, 38)
+                    }
+                }
+            }
+            .padding(.bottom, 8)
+        }
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.03), radius: 4, y: 1)
         }
     }
 }
